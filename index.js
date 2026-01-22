@@ -215,12 +215,21 @@ async function startXeonBotInc() {
     if (pairingCode && !XeonBotInc.authState.creds.registered) {
         if (useMobile) throw new Error('Cannot use pairing code with mobile api')
 
-        let phoneNumber
-        if (!!global.phoneNumber) {
-            phoneNumber = global.phoneNumber
-        } else {
-            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFormat: 6281376552730 (without + or spaces) : `)))
+                let phoneNumber;
+        // 1. Priority: Use environment variable (Best for Railway)
+        // 2. Fallback: Use the hardcoded variable at the top of your script
+        // 3. Last Resort: Use global.phoneNumber
+        phoneNumber = process.env.PHONE_NUMBER || global.phoneNumber || "923010609759";
+
+        // If it's still missing and we're not in an interactive terminal, 
+        // stop the process early with a clear error message.
+        if (!phoneNumber && !process.stdin.isTTY) {
+            console.error(chalk.red('❌ ERROR: No phone number found! Add PHONE_NUMBER to Railway Environment Variables.'));
+            process.exit(1);
+        } else if (!phoneNumber) {
+            phoneNumber = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number: `)));
         }
+
 
         // Clean the phone number - remove any non-digit characters
         phoneNumber = phoneNumber.replace(/[^0-9]/g, '')
